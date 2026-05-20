@@ -1,0 +1,13 @@
+# PC巡检 — 每30分钟
+# 调度：*/30 * * * *
+*/30 * * * * df -h | grep -v "/dev/mapper" | awk 'NR==1 || $5 > 80' > /tmp/pc_disk.txt && \
+df -h | awk '/^Filesystem/ {print $1, $2, $3, $4, $5}' | grep -v "tmpfs\|devtmpfs" > /tmp/pc_disk_full.txt 2>/dev/null && \
+grep "available" /proc/meminfo | awk -v total=$(grep MemTotal /proc/meminfo | awk '{print $2}') 'BEGIN{print "内存使用："; total_mb=int(total/1024); free_mb=int(free_mem_total/1024); print "总内存:" total_mb "MB"; print "可用内存:" free_mb "MB"; if(free_mb/total_mb*100 < 70) print "⚠️ 可用内存不足70%"' > /tmp/pc_mem.txt 2>/dev/null && \
+ollama list 2>&1 | grep -v "No containers" > /tmp/pc_ollama.txt 2>/dev/null && \
+nvidia-smi 2>&1 | grep -v "No GPU" > /tmp/pc_nvidia.txt 2>/dev/null && \
+ls -lhS /tmp | head -5 > /tmp/pc_tmp.txt 2>/dev/null && \
+[ -f /tmp/pc_disk_full.txt ] && cat /tmp/pc_disk_full.txt && [ -s /tmp/pc_disk_full.txt ] && echo "磁盘使用率异常" && \
+[ -s /tmp/pc_mem.txt ] && cat /tmp/pc_mem.txt && \
+[ -s /tmp/pc_ollama.txt ] && cat /tmp/pc_ollama.txt && \
+[ -s /tmp/pc_nvidia.txt ] && cat /tmp/pc_nvidia.txt && \
+[ -s /tmp/pc_tmp.txt ] && cat /tmp/pc_tmp.txt

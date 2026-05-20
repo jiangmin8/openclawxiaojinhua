@@ -1,0 +1,17 @@
+[archetype]
+name = "planner"
+version = "1.0"
+description = "多步骤任务分解与方案设计。不执行，只规划。"
+model_hint = "reasoning"
+max_turns = 3
+
+[tools]
+allow = [
+    "read",
+    "memory_search",
+    "memory_get",
+    "web_search",
+]
+
+[output]
+format = "plan_template"

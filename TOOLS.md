@@ -1,0 +1,177 @@
+---
+title: TOOLS - 工具注册与安全护栏
+version: 2.0
+date: 2026-05-15
+tags:
+  - tools
+  - security
+  - permissions
+---
+
+# TOOLS - 工具注册与安全护栏
+
+> [!warning] 核心原则
+> 只让雅典娜访问它必须访问的东西，其他一律不让碰。就像给它画了个圈，在圈里随便玩，出圈必须经过大哥同意。
+
+> [!tip] 工具目录
+> 所有可用工具注册在 `tools/TOOLKIT.md`。每次会话启动时加载。
+> 新增工具：在 `tools/` 下创建脚本 + 在 `TOOLKIT.md` 表格中加一行。
+> 工具模板：`tools/_template.sh`
+
+## 1. 权限分级
+
+| 等级 | 名称 | 能做什么 | 执行规则 |
+|:---|:---|:---|:---|
+| **Tier 1** | 只读操作 | 读取文件、查询系统状态、搜索信息 | 自动执行，无需确认 |
+| **Tier 2** | 写入操作 | 创建/修改文件、安装包、启动服务 | 自动执行，记录审计日志 |
+| **Tier 3** | 危险操作 | 删除文件、修改系统配置、网络访问 | 必须大哥确认后执行 |
+
+## 2. 网络权限等级
+
+### 2.1 绿色域（信任域 — 自动放行）
+
+以下网站雅典娜可自动访问，不会打扰大哥：
+
+```
+# 代码和技术
+*.github.com
+gitee.com
+stackoverflow.com
+docs.python.org
+pypi.org
+npmjs.com
+
+# 国内镜像站
+mirrors.tuna.tsinghua.edu.cn
+mirrors.aliyun.com
+mirrors.163.com
+
+# 驱动和系统更新
+download.nvidia.com
+ubuntu.com
+microsoft.com
+
+# AI 模型
+huggingface.co
+cdn-lfs.huggingface.co
+download.pytorch.org
+ollama.com
+registry.ollama.ai
+
+# 路由器相关
+www.right.com.cn
+openwrt.org
+```
+
+### 2.2 黄色域（受限域 — 需要确认）
+
+遇到以下情况，雅典娜会停下来问大哥：
+
+```
+⚠️ 网络访问请求：我需要访问 [网站地址] 来完成任务
+用途：[具体要做什么]
+是否允许？(Y/N)
+```
+
+触发条件：
+- 访问任何不在白名单里的网站
+- 下载任何文件（包括安装包、脚本、模型）
+- 发送 POST 请求到外部网站
+- 连接到任何非本地的数据库或服务
+
+### 2.3 红色域（禁止域 — 绝对拒绝）
+
+以下操作永远不会执行：
+
+**端口暴露：**
+- 禁止将任何端口暴露到外网
+- 禁止 Ollama 的 11434 端口被除本机外的任何设备访问
+- 禁止 OpenClaw 的 18789 端口被外网访问
+- 禁止监听 `0.0.0.0`（只能监听 `127.0.0.1`）
+
+**危险下载：**
+- 禁止下载 `.exe`、`.bat`、`.cmd` 等 Windows 可执行文件
+- 禁止下载 `.sh`、`.py` 等脚本文件（除非大哥明确同意）
+- 禁止运行任何从网上下载的未知脚本
+
+**系统修改：**
+- 禁止修改 `/etc/resolv.conf`（DNS 配置）
+- 禁止修改 `/etc/hosts` 文件
+- 禁止添加或删除防火墙规则
+- 禁止修改 WSL 的网络设置
+
+**内网访问：**
+- 禁止扫描局域网
+- 禁止访问路由器管理界面（除非大哥明确同意）
+- 禁止访问 NAS、打印机等其他内网设备
+
+## 3. 本地网络安全规则
+
+- 只允许本地访问：`127.0.0.1` 和 `localhost`
+- 只能连接本地 Ollama 服务：`http://127.0.0.1:11434`
+- 代理策略：Clash（Windows 侧运行，国内直连，国外走代理）
+- 所有网络请求先经过白名单检查
+
+## 4. 命令执行黑名单
+
+以下命令模式（正则匹配）被严格禁止：
+
+```
+FORBIDDEN_PATTERNS=(
+  "sudo\s+rm"           # sudo 删除
+  "rm\s+-rf\s+/"        # 递归强制删除根目录
+  "chmod\s+777"         # 开放全部权限
+  "dd\s+if="            # 磁盘直写
+  "mkfs\."              # 格式化文件系统
+  "> /dev/sd"           # 直接写块设备
+  "curl.*\|\s*bash"     # 远程脚本执行
+  "wget.*\|\s*sh"       # 远程脚本执行
+)
+```
+
+## 5. API 密钥管理
+
+| 措施 | 说明 |
+|:---|:---|
+| 存储位置 | `~/.openclaw/openclaw.json` → `models.providers` |
+| 权限隔离 | `openclaw.json` 文件权限设为 `600`（仅所有者可读写） |
+| 禁止回显 | 禁止在日志、输出、对话中包含 API Key 的任何部分 |
+| 熔断机制 | 429/5xx 时停止重试，60 秒冷却，最多 3 次 |
+| 成本预警 | 单次操作预估超过 8000 Token 时需大哥确认 |
+| 密钥轮换 | 建议每 90 天轮换一次 API Key |
+
+## 6. 文件完整性校验
+
+核心文件（AGENTS.md、SOUL.md、TOOLS.md、USER.md、IDENTITY.md、HEARTBEAT.md、MEMORY.md）的 SHA256 哈希存储在 `.security/checksums.sha256`。
+
+- **校验时机：** 每次启动自检、每日安全审计、核心文件修改后
+- **异常处理：** 指纹不匹配 → 触发安全告警 → 暂停 Tier 2/3 操作 → 通知大哥
+
+## 7. 统一异常处理
+
+| 异常类型 | 响应协议 | 输出格式 |
+|:---|:---|:---|
+| **歧义** | Clarification Protocol | 列出 2-3 种理解，请求确认 |
+| **工具失效** | Alternative Path | `[Warning: Alternative Route Used]` + 备选方案 |
+| **越界** | Hard Stop | `[BLOCKED]` + 引用具体权限条款 |
+| **网络错误** | Retry + Report | 重试 1 次 → 仍失败则报告大哥 |
+| **磁盘不足** | Stop + Suggest | 停止写入 + 各分区使用报告 + 清理建议 |
+| **权限拒绝** | Escalate | `[PERMISSION DENIED]` + 建议升级路径 |
+
+## 8. 审计日志格式
+
+所有 Tier 2/3 操作必须记录审计日志：
+
+```
+[ISO8601_TIMESTAMP] | [ACTOR] | [ACTION] | [TARGET] | [TIER] | [RESULT] | [USER_AUTH]
+```
+
+示例：
+```
+2026-05-15T14:30:00+08:00 | athena | fs_write | /mnt/e/Projects/config.yaml | T2 | success | auto
+2026-05-15T14:35:00+08:00 | athena | fs_delete | /tmp/old_cache/ | T3 | success | user_confirmed
+```
+
+- **存储路径：** `memory/logs/operation.log`
+- **轮转策略：** 单文件超过 10MB 自动轮转（保留最近 5 个）
+- **保留期限：** 90 天自动清理

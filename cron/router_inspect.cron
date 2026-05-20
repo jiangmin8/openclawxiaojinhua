@@ -1,0 +1,9 @@
+# 路由器巡检 — 每60分钟
+# 调度：*/60 * * * *
+*/60 * * * * ssh root@192.168.8.1 'uptime | awk -v now="$(date)" "NR==1{print now;}/ {print $7}'" 2>&1 | grep -q "load 1.00" && echo "⚠️ CPU负载过高" && \
+free -h | awk '/^Mem:/ && $3 < $(NF-2) && $(NF-2) < 512M {print "⚠️ 内存不足"}' > /tmp/router_mem.txt 2>/dev/null && cat /tmp/router_mem.txt && \
+mount | grep -E "tmpfs|ramdisk|overlay" > /tmp/router_mount.txt 2>/dev/null && cat /tmp/router_mount.txt && \
+grep -i "aghn" /sys/class/misc/ 2>/dev/null > /tmp/router_agh.txt && cat /tmp/router_agh.txt && \
+swapon --show 2>/dev/null > /tmp/router_swap.txt && cat /tmp/router_swap.txt && \
+logread -t "$(date -Iseconds)" | grep -iE "error|fail|warn" > /tmp/router_log.txt 2>/dev/null && cat /tmp/router_log.txt && \
+ls -lhS /dev/mtdblock/ 2>/dev/null | head -5 > /tmp/router_mtd.txt && cat /tmp/router_mtd.txt

@@ -1,0 +1,21 @@
+[archetype]
+name = "personal_model"
+version = "1.0"
+description = "Elephant 风格 Personal Model — 4镜(Identity/World/Pulse/Journey)自进化记忆系统"
+model_hint = "summarize"  # 轻量模型做后台提炼
+max_turns = 3
+
+[tools]
+allow = [
+    "read",
+    "write",
+    "memory_search",
+    "memory_get",
+    "agentmemory__memory_save",
+    "agentmemory__memory_recall",
+    "agentmemory__memory_smart_search",
+]
+
+[output]
+format = "personal_model_update"
+storage = "PERSONAL_MODEL.md"

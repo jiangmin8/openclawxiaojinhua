@@ -1,0 +1,17 @@
+[archetype]
+name = "system_guard"
+version = "1.0"
+description = "系统健康巡检。服务/磁盘/内存/GPU/网络连通性检查。"
+model_hint = "fast"  # 用轻量模型
+max_turns = 3
+
+[tools]
+allow = [
+    "exec",
+    "read",
+    "memory_search",
+]
+
+[output]
+format = "health_report"
+alert_on = ["service_down", "disk_above_85", "memory_above_90", "gpu_anomaly"]

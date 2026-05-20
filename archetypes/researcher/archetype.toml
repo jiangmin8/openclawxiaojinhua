@@ -1,0 +1,19 @@
+[archetype]
+name = "researcher"
+version = "1.0"
+description = "Web 检索与信息提取专家。搜索、抓取、交叉验证、引用标注。"
+model_hint = "reasoning"  # 用主推理模型
+max_turns = 5
+
+[tools]
+allow = [
+    "web_search",
+    "web_fetch",
+    "memory_search",
+    "memory_get",
+    "read",
+]
+
+[output]
+format = "structured"
+require_citations = true

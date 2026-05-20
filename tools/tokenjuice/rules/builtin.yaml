@@ -1,0 +1,112 @@
+# TokenJuice 规则 — 工具输出压缩配置
+# 三层叠加：内置(builtin) < 全局(user) < 项目(project)
+# 优先级：project > user > builtin
+
+rules:
+
+  # ─── Git ───
+  - name: git-status-compact
+    tool: git
+    match: "^git\\s+status"
+    strategies:
+      - dedup_lines
+      - truncate: {max_lines: 40}
+    note: "git status 去重行，超40行截断"
+
+  - name: git-diff-compress
+    tool: git
+    match: "^git\\s+diff"
+    strategies:
+      - strip_context: {context_lines: 2}
+      - truncate: {max_lines: 100}
+    note: "diff 保留2行上下文，超100行截断"
+
+  - name: git-log-compact
+    tool: git
+    match: "^git\\s+log"
+    strategies:
+      - strip_headers
+      - truncate: {max_lines: 30}
+    note: "保留 commit hash + 第一行 message"
+
+  # ─── 包管理 ───
+  - name: cargo-build-strip
+    tool: cargo
+    match: "cargo\\s+(build|check|test)"
+    strategies:
+      - drop_lines: {regex: "(Compiling|Downloading|Downloaded|Finished|Updating)"}
+      - keep_lines: {regex: "(error|warning)"}
+    note: "只保留 error/warning，丢弃编译进度"
+
+  - name: npm-pip-strip
+    tool: npm|pip
+    match: "(npm|pip|pnpm)\\s+(install|build|run)"
+    strategies:
+      - drop_lines: {regex: "(added|removed|changed|audited|Progress)"}
+      - keep_lines: {regex: "(error|warn|ERR|FAIL)"}
+      - dedup_lines
+    note: "只保留错误和警告"
+
+  # ─── 文件操作 ───
+  - name: ls-long-compress
+    tool: ls
+    match: "^ls\\s+-l"
+    strategies:
+      - truncate: {max_lines: 50}
+      - summarize: {style: "count_by_type"}
+    note: "文件列表超50行，按类型统计"
+
+  - name: cat-truncate
+    tool: cat
+    match: "^cat\\s+"
+    strategies:
+      - truncate: {max_chars: 8000}
+      - summarize: {style: "head_tail", head: 30, tail: 10}
+    note: "保留头30行+尾10行"
+
+  - name: find-compress
+    tool: find
+    match: "^find\\s+"
+    strategies:
+      - truncate: {max_lines: 100}
+      - dedup_lines
+    note: "搜索结果截断"
+
+  # ─── 系统命令 ───
+  - name: ps-docker-compress
+    tool: docker|ps
+    match: "(docker\\s+ps|ps\\s+aux)"
+    strategies:
+      - dedup_lines
+      - truncate: {max_lines: 20}
+    note: "只保留前20行"
+
+  - name: df-free-compact
+    tool: df|free|du
+    match: "(df|free|du)\\s+"
+    strategies:
+      - keep_lines: {regex: "(Filesystem|Mem|Swap|total|/dev|/mnt)"}
+    note: "只保留汇总行和挂载点"
+
+  - name: curl-strip-headers
+    tool: curl|wget
+    match: "(curl|wget)\\s+"
+    strategies:
+      - drop_lines: {regex: "(HTTP/|< |>|{|}\\s*$|Set-Cookie)"}
+      - truncate: {max_chars: 5000}
+    note: "丢弃HTTP头，结果截断"
+
+  # ─── 通用 ───
+  - name: error-priority
+    tool: "*"
+    match: ".*"
+    strategies:
+      - boost_errors: {action: "prepend_summary"}
+    note: "如果输出含 error/fail/panic，在开头加摘要"
+
+  - name: whitespace-fold
+    tool: "*"
+    match: ".*"
+    strategies:
+      - fold_whitespace: {max_blank_lines: 2}
+    note: "折叠超过2行的连续空行"

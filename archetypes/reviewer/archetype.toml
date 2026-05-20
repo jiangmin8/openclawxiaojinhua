@@ -1,0 +1,21 @@
+[archetype]
+name = "reviewer"
+version = "1.0"
+description = "代码审查、安全审计、配置校验。只读，不修改。"
+model_hint = "reasoning"
+max_turns = 5
+
+[tools]
+allow = [
+    "read",
+    "exec",
+    "memory_search",
+    "memory_get",
+]
+
+[safety]
+# reviewer exec 限定在只读命令
+allowed_commands = ["grep", "find", "wc", "stat", "sha256sum", "md5sum", "diff", "git log", "git diff", "git show", "cat", "head", "tail", "ls", "file", "du", "df"]
+
+[output]
+severity_levels = ["P0_critical", "P1_high", "P2_medium", "P3_low"]

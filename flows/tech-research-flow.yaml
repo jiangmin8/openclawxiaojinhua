@@ -1,0 +1,45 @@
+# Flow 模板 — 示例：技术调研 Flow
+# 定义三个节点：抓取 → 提取 → 分析，链式执行
+
+name: tech-research-flow
+description: "技术调研：抓取网页 → 提取内容 → 本地模型分析"
+
+nodes:
+  - id: fetch_page
+    start: true                           # @start — 入口
+    archetype: code_executor
+    model: ollama/qwen2.5:7b
+    task: |
+      使用 web_fetch 抓取页面内容。URL: {{input}}
+      返回原始文本内容。
+    max_turns: 2
+    timeout_seconds: 60
+
+  - id: extract_info
+    listen: fetch_page                    # @listen(fetch_page) — 自动收到上游输出
+    archetype: researcher
+    model: ollama/qwen2.5:7b
+    task: |
+      从上一步抓取的页面内容中提取：
+      1. 核心技术栈
+      2. 架构设计要点
+      3. 值得借鉴的模式
+      以 Markdown 列表形式返回。
+    max_turns: 3
+    timeout_seconds: 90
+
+  - id: route_decision
+    listen: extract_info
+    router:                               # @router — 条件路由
+      - condition: always
+        target: analyze_findings
+
+  - id: analyze_findings
+    listen: extract_info
+    archetype: planner
+    model: ollama/deepseek-r1:8b
+    task: |
+      基于提取的技术信息，评估该项目的设计模式是否值得引入雅典娜。
+      给出：1) 适配难度 2) 收益评估 3) 实施建议。
+    max_turns: 3
+    timeout_seconds: 120

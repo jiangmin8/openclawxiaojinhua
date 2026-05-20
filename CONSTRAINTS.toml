@@ -1,0 +1,103 @@
+# CONSTRAINTS.toml — 雅典娜硬约束（机器可解析）
+# 此文件由 guard-exec.sh 和 verify-constraints.sh 读取
+# 修改后运行 verify-constraints.sh 重新验证
+
+[meta]
+agent = "athena"
+version = "1.0"
+enforced_by = ["guard-exec.sh", "pre-exec-hook", "verify-constraints.sh"]
+
+[filesystem]
+# 允许写入的路径（正则）
+allowed_write_paths = [
+    "^/mnt/d/",
+    "^/mnt/e/",
+    "^/mnt/f/",
+    "^/mnt/g/",
+    "^/mnt/sda1/",
+    "^/home/lz/",
+    "^/tmp/"
+]
+# 绝对禁止的路径
+forbidden_paths = [
+    "/mnt/c/",
+    "/etc/",
+    "/usr/",
+    "/boot/",
+    "/sys/",
+    "/proc/",
+    "/root/"
+]
+
+[commands]
+# 禁止执行的命令模式（POSIX 扩展正则）
+forbidden_patterns = [
+    "sudo\\s+rm\\s+-rf\\s+/",
+    "sudo\\s+rm\\s+-rf\\s+--no-preserve-root",
+    "rm\\s+-rf\\s+/",
+    "chmod\\s+777",
+    "dd\\s+if=",
+    "mkfs\\.",
+    "curl.*\\|\\s*(ba)?sh",
+    "wget.*\\|\\s*(ba)?sh",
+    ">\\s*/dev/sd",
+]
+
+[network]
+# 白名单域名（正则）
+allowed_domains = [
+    "github\\.com",
+    "gitee\\.com",
+    "stackoverflow\\.com",
+    "docs\\.python\\.org",
+    "pypi\\.org",
+    "npmjs\\.com",
+    "mirrors\\.tuna\\.tsinghua\\.edu\\.cn",
+    "mirrors\\.aliyun\\.com",
+    "mirrors\\.163\\.com",
+    "download\\.nvidia\\.com",
+    "ubuntu\\.com",
+    "microsoft\\.com",
+    "huggingface\\.co",
+    "cdn-lfs\\.huggingface\\.co",
+    "download\\.pytorch\\.org",
+    "ollama\\.com",
+    "registry\\.ollama\\.ai",
+    "www\\.right\\.com\\.cn",
+    "openwrt\\.org",
+]
+# 禁止监听 0.0.0.0
+forbid_broadcast_listen = true
+# 禁止局域网扫描
+forbid_lan_scan = true
+
+[core_files]
+# 禁止 agent 自行修改的文件列表
+protected = [
+    "AGENTS.md",
+    "SOUL.md",
+    "TOOLS.md",
+    "USER.md",
+    "IDENTITY.md",
+    "HEARTBEAT.md",
+    "MEMORY.md",
+    "BOOT.md",
+    "CHANGELOG.md",
+]
+
+[execution_cycle]
+# 七步循环的必选步骤（不可跳过）
+required_steps = [
+    "Perceive",
+    "Deconstruct",
+    "Plan",
+    "Select",
+    "Execute",
+    "Verify",
+    "Record",
+]
+# 必须输出的结构
+required_outputs = [
+    "## 执行计划",
+    "## 验证结果",
+]

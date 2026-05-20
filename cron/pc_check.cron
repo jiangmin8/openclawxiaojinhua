@@ -1,0 +1,2 @@
+# PC 巡检 — 每30分钟
+*/30 * * * * /home/lz/.openclaw/workspace/cron/scripts/pc_check.sh >> /home/lz/.openclaw/workspace/cron/logs/pc_check.log 2>&1

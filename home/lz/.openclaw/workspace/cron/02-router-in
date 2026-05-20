@@ -1,0 +1,3 @@
+# 路由器巡检定时任务
+# 每60分钟执行一次
+*/60 * * * * ssh root@192.168.8.1 '/home/lz/.openclaw/workspace/cron/router_inspe' >> /var/log/cron/router_inspe.log 2>&1

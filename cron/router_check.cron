@@ -1,0 +1,2 @@
+# 路由器巡检 — 每60分钟
+*/60 * * * * /home/lz/.openclaw/workspace/cron/scripts/router_check.sh >> /home/lz/.openclaw/workspace/cron/logs/router_check.log 2>&1

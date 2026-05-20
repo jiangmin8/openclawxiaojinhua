@@ -1,0 +1,23 @@
+[archetype]
+name = "code_executor"
+version = "1.0"
+description = "代码编写、执行、调试、验证。文件操作 + Shell 执行。"
+model_hint = "code"
+max_turns = 10
+
+[tools]
+allow = [
+    "exec",
+    "read",
+    "write",
+    "edit",
+    "web_search",
+    "web_fetch",
+]
+
+[safety]
+write_paths = ["/mnt/d/", "/mnt/e/", "/mnt/f/", "/mnt/g/", "/home/lz/", "/tmp/"]
+forbidden_patterns = ["sudo rm", "rm -rf /", "chmod 777", "dd if=", "mkfs.", "> /dev/sd", "curl.*|.*bash"]
+
+[output]
+show_command = true  # 显示执行的命令
